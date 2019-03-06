@@ -20,6 +20,12 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Access Video</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Access Camera</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Access Photo</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
