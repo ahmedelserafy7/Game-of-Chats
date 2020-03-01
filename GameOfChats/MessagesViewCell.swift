@@ -37,7 +37,6 @@ class MessagesViewCell: UICollectionViewCell {
     
     let profileImageView: CustomImageView = {
         let imageView = CustomImageView()
-//        imageView.image = #imageLiteral(resourceName: "Bill-Gates")
         imageView.layer.cornerRadius = 16
         imageView.layer.masksToBounds = true
         imageView.contentMode = .scaleAspectFill
@@ -57,7 +56,7 @@ class MessagesViewCell: UICollectionViewCell {
     }()
     
     let activityIndicator: UIActivityIndicatorView = {
-        let aIV = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
+        let aIV = UIActivityIndicatorView(style: .whiteLarge)
         aIV.hidesWhenStopped = true
         aIV.translatesAutoresizingMaskIntoConstraints = false
         return aIV
@@ -67,24 +66,22 @@ class MessagesViewCell: UICollectionViewCell {
         let button = UIButton(type: .system)
         let image = UIImage(named: "play")?.withRenderingMode(.alwaysOriginal)
         button.setImage(image, for: .normal)
-//        button.tintColor = .white
         button.addTarget(self, action: #selector(handlePlay), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     var videoPlayer: AVPlayer?
-    var playerLayer: AVPlayerLayer?
+    var playerLayer = AVPlayerLayer()
     
-    func handlePlay() {
-        //print("Video play")
+    @objc func handlePlay() {
         
         if let videoUrlString = message?.videoUrl, let url = URL(string: videoUrlString) {
             videoPlayer = AVPlayer(url: url)
             
             playerLayer = AVPlayerLayer(player: videoPlayer)
             
-            playerLayer?.frame = bubbleView.bounds
-            bubbleView.layer.addSublayer(playerLayer!)
+            playerLayer.frame = bubbleView.bounds
+            bubbleView.layer.addSublayer(playerLayer)
             
             videoPlayer?.play()
             playButton.isHidden = true
@@ -100,12 +97,10 @@ class MessagesViewCell: UICollectionViewCell {
         super.prepareForReuse()
         
         // to cleanup layer, when reuse cell
-        playerLayer?.removeFromSuperlayer()
+        playerLayer.removeFromSuperlayer()
         
         // to kill the audio process in the background
         videoPlayer?.pause()
-        
-//        activityIndicator.stopAnimating()
     }
     
     func setupGradientView() {
@@ -118,7 +113,7 @@ class MessagesViewCell: UICollectionViewCell {
     }
     
     var chatLogController: ChatLogController?
-    func handleZoomingImageTap() {
+    @objc func handleZoomingImageTap() {
         if message?.videoUrl != nil {
             return
         }
@@ -166,7 +161,6 @@ class MessagesViewCell: UICollectionViewCell {
         bubbleViewRightAnchor = bubbleView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
         bubbleViewRightAnchor?.isActive = true
         bubbleViewLeftAnchor = bubbleView.leftAnchor.constraint(equalTo: profileImageView.rightAnchor, constant: 8)
-//        bubbleViewLeftAnchor?.isActive = false
         bubbleView.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
         bubbleViewWidthAnchor = bubbleView.widthAnchor.constraint(equalToConstant: 200)
             bubbleViewWidthAnchor?.isActive = true
@@ -176,9 +170,7 @@ class MessagesViewCell: UICollectionViewCell {
         textView.rightAnchor.constraint(equalTo: bubbleView.rightAnchor, constant: -6).isActive = true
         textView.leftAnchor.constraint(equalTo: bubbleView.leftAnchor,constant: 6).isActive = true
         textView.topAnchor.constraint(equalTo: bubbleView.topAnchor).isActive = true
-//        textView.widthAnchor.constraint(equalToConstant: 200).isActive = true
         textView.heightAnchor.constraint(equalTo: self.heightAnchor).isActive = true
-//        textView.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor).isActive = true
         
     }
     

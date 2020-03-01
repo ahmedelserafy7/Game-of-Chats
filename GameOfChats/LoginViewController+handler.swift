@@ -22,9 +22,34 @@ extension LoginViewController: UIImagePickerControllerDelegate, UINavigationCont
             return
         }
         
+        if name.isEmpty || email.isEmpty || password.isEmpty {
+            
+            self.nameTextField.text = nil
+            self.emailTextField.text = nil
+            self.passwordTextField.text = nil
+            self.profileImageView.image = UIImage(named: "gameofthrones_splash")
+            
+            blackView.alpha = 0
+            activityIndicator.stopAnimating()
+            
+            self.displayAlert("One of the required fields is missing")
+            return
+        }
+        
         Auth.auth().createUser(withEmail: email, password: password) { (user, error) in
+            
+            self.blackView.alpha = 0
+            self.activityIndicator.stopAnimating()
+            
             if error != nil {
                 print(error!)
+                
+                self.nameTextField.text = nil
+                self.emailTextField.text = nil
+                self.passwordTextField.text = nil
+                
+                self.displayAlert("Couldn't successfully perform this request, please try again..")
+
                 // to get out of error, if it doesn't exist error
                 return
             }
@@ -32,23 +57,25 @@ extension LoginViewController: UIImagePickerControllerDelegate, UINavigationCont
             // successfully authenticated data....
             let uniqueID = UUID().uuidString
             let storagRef = Storage.storage().reference().child("usersProfileImages").child("\(uniqueID).jpg")
-            
-            // if let uploadData = UIImagePNGRepresentation(self.profileImageView.image!) {
-            
+
             // the proper way to compress the profileImageView
-            guard let profileImage = self.profileImageView.image, let uploadData = UIImageJPEGRepresentation(profileImage, 0.1) else { return }
+            guard let profileImage = self.profileImageView.image, let uploadData = profileImage.jpegData(compressionQuality: 0.1) else { return }
+            
             storagRef.putData(uploadData, metadata: nil, completion: { (metaData, error) in
                 if error != nil {
                     print(error!)
+                    self.displayAlert("Something went wrong!")
+                    return
                 }
                 
-                guard let uid = user?.user.uid else {
+                guard let uid = user?.uid else {
                     return
                 }
                 
                 storagRef.downloadURL(completion: { (url, err) in
                     if err != nil {
                         print("Failed to register new user, ", err?.localizedDescription ?? "")
+                        self.displayAlert("Something went wrong!")
                         return
                     }
                     
@@ -57,7 +84,6 @@ extension LoginViewController: UIImagePickerControllerDelegate, UINavigationCont
                         
                         let values = ["name": name, "email": email, "profileImageUrl": profileImageUrl] as [String : Any]
                         self.registerUserIntoDatabaseWithUID(uid, values: values as[String: AnyObject])
-                        // print(metaData!)
                     }
                     
                 })
@@ -66,31 +92,35 @@ extension LoginViewController: UIImagePickerControllerDelegate, UINavigationCont
             
             
         }
+        
     }
     
     func registerUserIntoDatabaseWithUID(_ uid: String, values: [String: AnyObject]) {
-        //        let ref = Database.database().reference(fromURL: "https://gameofchats-ce67d.firebaseio.com/")
+        
         let ref = Database.database().reference()
         let usersRef = ref.child("users").child(uid)
         
         usersRef.updateChildValues(values, withCompletionBlock: { (err, dataRef) in
             if err != nil {
                 print(err!)
+                self.displayAlert("Couldn't successfully perform this request, please try again..")
                 return
             }
             
-            //self.myOwnMessages?.fetchUserWithNavbarTitle()
-            let user = User(dictionary: values)
+            let user = User()
+            user.id = values["id"] as? String
+            user.name = values["name"] as? String
+            user.email = values["email"] as? String
+            user.profileImageUrl = values["profileImageUrl"] as? String
             // it's important setter (values keys) match with user parameters, potentially crashes if setter doesn't match with the values keys
-            user.setValuesForKeys(values)
+//            user.setValuesForKeys(values)
             self.myMessagesController?.setupNavBarTitleWithProfileImageView(user)
-            //self.myOwnMessages?.navigationItem.title = values["name"] as? String
             self.dismiss(animated: true, completion: nil)
             print("Saved user successfully into firebase db")
         })
     }
     
-    func handleSelectedImageView(_ sender: UITapGestureRecognizer) {
+    @objc func handleSelectedImageView(_ sender: UITapGestureRecognizer) {
         
         let picker = UIImagePickerController()
         picker.allowsEditing = true
@@ -106,22 +136,19 @@ extension LoginViewController: UIImagePickerControllerDelegate, UINavigationCont
         print("canceledButton")
     }
     
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+    
         var selectedImageFromPhotoLibrary: UIImage?
         
-        if let editingImage = info["UIImagePickerControllerEditedImage"] as? UIImage {
+        if let editingImage = info[UIImagePickerController.InfoKey.editedImage] as? UIImage {
             selectedImageFromPhotoLibrary = editingImage
-            // print(editingImage.size)
-        } else if let originalImage = info["UIImagePickerControllerOriginalImage"] as? UIImage{
+        } else if let originalImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage{
             selectedImageFromPhotoLibrary = originalImage
-            // print(originalImage.size)
         }
         if let selectedImage = selectedImageFromPhotoLibrary {
             self.profileImageView.image = selectedImage
         }
         dismiss(animated: true, completion: nil)
-        // print(info)
     }
     
     

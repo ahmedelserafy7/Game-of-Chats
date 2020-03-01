@@ -24,18 +24,17 @@ class MessagesController: UITableViewController {
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
         tableView.allowsMultipleSelectionDuringEditing = true
         checkIfUserLoggedIn()
-        //        observeMessages()
-        //        observeUserMessages()
     }
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         return true
     }
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         
-        //        print(indexPath.item)
         guard let uid = Auth.auth().currentUser?.uid else {
             return
         }
+        
         let message = messages[indexPath.item]
         if let chatPartnerId = message.chatPartnerId() {
             Database.database().reference().child("user_messages").child(uid).child(chatPartnerId).removeValue(completionBlock: { (error, ref) in
@@ -46,10 +45,6 @@ class MessagesController: UITableViewController {
                 self.messageDictionary.removeValue(forKey: chatPartnerId)
                 // to update cells
                 self.reloadDataIntoCells()
-                
-                //self.messages.remove(at: indexPath.item)
-                // update of cells
-                //self.tableView.deleteRows(at: [indexPath], with: .automatic)
             })
             
         }
@@ -64,13 +59,11 @@ class MessagesController: UITableViewController {
         }
         let userMessagesRef = Database.database().reference().child("user_messages").child(uid)
         userMessagesRef.observe(.childAdded, with: { (snapshot) in
-            //            print(snapshot.key)
             
             let userId = snapshot.key
             
-            //print(userId)
             userMessagesRef.child(userId).observe(.childAdded, with: { (snapshot) in
-                //                print(snapshot)
+                
                 let messageId = snapshot.key
                 
                 self.fetchMessageWithMessagesId(messageId)
@@ -81,8 +74,7 @@ class MessagesController: UITableViewController {
         // to remove node feom firebase directly
         // to remove the entire node(toId or userId) that underneath the current user
         userMessagesRef.observe(.childRemoved, with: { (snapshot) in
-            //        print(snapshot.key)
-            //        print(self.messageDictionary)
+        
             self.messageDictionary.removeValue(forKey: snapshot.key)
             self.reloadDataIntoCells()
         }, withCancel: nil)
@@ -94,11 +86,18 @@ class MessagesController: UITableViewController {
         // looke up and search for particular child
         messagesChildRef.observeSingleEvent(of: .value, with: { (snapshot) in
             
-            //print(snapshot)
-            
             if let dictionary = snapshot.value as? [String: AnyObject] {
-                let message = Message(dictionary: dictionary)
-                //                message.setValuesForKeys(dictionary)
+                let message = Message()
+                message.fromId = dictionary["fromId"] as? String
+                message.toId = dictionary["toId"] as? String
+                message.textMessage = dictionary["textMessage"] as? String
+                message.messageTime = dictionary["messageTime"] as? NSNumber
+                
+                message.imageUrl = dictionary["imageUrl"] as? String
+                message.imageHeight = dictionary["imageHeight"] as? NSNumber
+                message.imageWidth = dictionary["imageWidth"] as? NSNumber
+                
+                message.videoUrl = dictionary["videoUrl"] as? String
                 
                 if let chatPartnerId = message.chatPartnerId() {
                     // you have message that has value and key of all messages data from dictionary right above that give data to message, and now self.messageDictionary[message.toId!] means you want value and the value will be all message, but you need unique id for message that could appear one cell for two and more messages in tableView
@@ -120,16 +119,11 @@ class MessagesController: UITableViewController {
         
         self.timer?.invalidate()
         
-        //print("invalidated / canceled our timer that we created")
-        
         // create a 'scheduled timer' to reload data at the entire tableView in 0.1 sec
         self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadData), userInfo: nil, repeats: false)
-        
-        //print("schedule a table reload in 0.1 sec")
-        //print(message.textMessage!)
     }
     
-    func handleReloadData() {
+    @objc func handleReloadData() {
         
         // to construct array of data cells once, instead of reconstructing array everytime i find new message of new cell
         // the time that i reload data into cell, i will construct array of data
@@ -141,61 +135,29 @@ class MessagesController: UITableViewController {
         
         // delete 'ed' from sorted
         self.messages.sort(by: { (message1, message2) -> Bool in
-            return message1.messageTime!.intValue > message2.messageTime!.intValue
+            
+            guard let firMessage = message1.messageTime?.intValue else { return  false }
+            guard let secMessage = message2.messageTime?.intValue else { return  false }
+            return firMessage > secMessage
         })
         
         //prevent main from getting out to the background thread at every time to fetch data, i need to fetch data just one time and not to crash the app by using DispatchQueue
         DispatchQueue.main.async(execute: {
-            // reload data in the tableView
-            //            print("finally we reloaded the data into the tableView")
-            
+
             // to reloade data from firebase
             self.tableView.reloadData()
             
         })
     }
-    /* func observeMessages() {
-     // to fetch data from firebase to app
-     Database.database().reference().child("messages").observe(.childAdded, with: { (snapshot) in
-     //            print(snapshot!.value)
-     if let dictionary = snapshot.value as? [String: AnyObject] {
-     let message = Message()
-     message.setValuesForKeys(dictionary)
-     
-     if let chatPartnerId = message.chatPartnerId() {
-     // you have message that has value and key of all messages data from dictionary right above that give data to message, and now self.messageDictionary[message.toId!] means you want value and the value will be all message, but you need unique id for message that could appear one cell for two and more message in tableView
-     // to save all messages into dictionary, and by id u can appear one user that has alot of messages in one cell instead of two cells or more for two messages of more
-     // self.messageDictionary[toId] represent message that has only one id to all messages that can appear
-     self.messageDictionary[chatPartnerId] = message
-     
-     // then give values to messages that look like library that has all books to show
-     self.messages = Array(self.messageDictionary.values)
-     //self.messages.append(message)
-     
-     // delete 'ed' from sorted
-     self.messages.sort(by: { (message1, message2) -> Bool in
-     return message1.messageTime!.intValue > message2.messageTime!.intValue
-     })
-     }
-     
-     //prevent main from getting out to the background thread at every time to fetch data, i need to fetch data just one time and not to crash the app by using DispatchQueue
-     DispatchQueue.main.async(execute: {
-     // to reloade data from firebase
-     self.tableView.reloadData()
-     })
-     //                print(message.textMessage!)
-     }
-     }, withCancel: nil)
-     }*/
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return messages.count
     }
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        //        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "cellId")
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath) as! UserCell
         let message = messages[indexPath.item]
         cell.message = message
-        //cell.textLabel?.text = message.toId
         
         return cell
     }
@@ -214,29 +176,27 @@ class MessagesController: UITableViewController {
         userRef.observeSingleEvent(of: .value
             , with: { (snapshot) in
                 
-                //                print(snapshot.value)
                 guard let dictionary = snapshot.value as? [String: AnyObject] else {
                     return
                 }
-                let user = User(dictionary: dictionary)
+                let user = User()
                 user.id = chatPartnerId
+//                user.id = dictionary["id"] as? String
+                user.name = dictionary["name"] as? String
+                user.email = dictionary["email"] as? String
+                user.profileImageUrl = dictionary["profileImageUrl"] as? String
                 // right now user has every data(name, email, profile, and id) in one object
-                user.setValuesForKeys(dictionary)
+//                user.setValuesForKeys(dictionary)
                 self.showChatLogForUser(user)
         }, withCancel: nil)
-        
-        //        let message = messages[indexPath.item]
-        
-        //        print("text message: \(message.textMessage!)", "fromId: \(message.fromId)", "toId: \(message.toId)")
-        
+    
     }
-    func handleMessages() {
-        let newMessagesController = NewMessagesController()
-        newMessagesController.messagesController = self
-        let navController = UINavigationController(rootViewController: newMessagesController)
-        present(navController, animated: true, completion: nil)
-        //        show(navController, sender: nil)
-        //        self.navigationController?.pushViewController(navController, animated: true)
+    
+    @objc func handleMessages() {
+            let newMessagesController = NewMessagesController()
+            newMessagesController.messagesController = self
+            let navController = UINavigationController(rootViewController: newMessagesController)
+            self.present(navController, animated: true, completion: nil)
     }
     
     func checkIfUserLoggedIn() {
@@ -244,7 +204,6 @@ class MessagesController: UITableViewController {
         // currentUser: Synchronously gets the cached current us/Users/elser_10/Desktop/GameOfChats/GameOfChats/ChatInputContainerView.swifter, or null if there is none.
         // uid is nil either currentUser is not existed, or currentUser log out of the application
         if Auth.auth().currentUser?.uid == nil {
-            //handleLogoutButton()
             
             // adopt an idead that contains two viewControllers and if the operation is successed, then one of the operation will appear, and the other will be the background thread
             // delay is zero that means no delay of appearing thread message/one of two viewControllers
@@ -266,13 +225,16 @@ class MessagesController: UITableViewController {
             guard let dictionary = snapshot.value as? [String: AnyObject] else {
                 return
             }
-            let user = User(dictionary: dictionary)
-            user.setValuesForKeys(dictionary)
+            let user = User()
+            user.id = dictionary["id"] as? String
+            user.name = dictionary["name"] as? String
+            user.email = dictionary["email"] as? String
+            user.profileImageUrl = dictionary["profileImageUrl"] as? String
+//            user.setValuesForKeys(dictionary)
             self.setupNavBarTitleWithProfileImageView(user)
-            //            self.navigationItem.title = dictionary?["name"] as? String
-            //print(snapshot)
         }, withCancel: nil)
     }
+    
     func setupNavBarTitleWithProfileImageView(_ user: User) {
         
         
@@ -282,9 +244,7 @@ class MessagesController: UITableViewController {
         
  
         observeUserMessages()
-        //        navigationItem.title = user.name
         let titleView = UIView()
-        //        titleView.backgroundColor = .yellow
         titleView.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
         
         let containerView = UIView()
@@ -326,8 +286,6 @@ class MessagesController: UITableViewController {
         containerView.centerYAnchor.constraint(equalTo: titleView.centerYAnchor).isActive = true
         // to express the thing that will be and come out in the middle of title instead of original title
         navigationItem.titleView = titleView
-        //        titleView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleChat)))
-        
     }
     
     func showChatLogForUser(_ user: User) {
@@ -335,7 +293,7 @@ class MessagesController: UITableViewController {
         chatLogController.user = user
         navigationController?.pushViewController(chatLogController, animated: true)
     }
-    func handleLogoutButton() {
+    @objc func handleLogoutButton() {
         do {
             try Auth.auth().signOut()
             

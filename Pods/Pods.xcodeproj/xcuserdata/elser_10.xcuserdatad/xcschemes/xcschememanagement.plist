@@ -4,6 +4,16 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>Firebase.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>FirebaseAnalytics.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>FirebaseAuth.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -15,6 +25,11 @@
 			<false/>
 		</dict>
 		<key>FirebaseDatabase.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>FirebaseInstanceID.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -44,49 +59,13 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>nanopb.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
-	<dict>
-		<key>34371692C0577426FE7C41894182EEA5</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>4FE6519D1F72954C957D6BC4E49941BC</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>5E85ADE55180906BD16B50AD30E63E92</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>7D8F72D44F8CDBAD714E93BC56BF8707</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>7EACE9EB449E329153E8A985A340E537</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>9AD0B5EAA947C40BFAFF2C97C7FD4094</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>E4DD1E11297017930AFBAE839DD28591</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>F4053FF0B66FA8985A37A25C0610E132</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-	</dict>
+	<dict/>
 </dict>
 </plist>

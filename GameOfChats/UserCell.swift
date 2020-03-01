@@ -36,19 +36,11 @@ class UserCell: UITableViewCell {
                 //dateFormatter.dateFormat = "hh:mm:ss a"
                 
                 timeLabel.text = dateFormatter.string(from: timeMessageDate)
-                //timeLabel.text = timeMessageDate.description
             }
             
         }
     }
     func setupUserWithProfileImage() {
-        /* let chatPartnerId: String?
-         if message?.fromId == Auth.auth().currentUser?.uid {
-         chatPartnerId = message?.toId
-         }
-         else {
-         chatPartnerId = message?.fromId
-         }*/
         if let id = message?.chatPartnerId() {
             Database.database().reference().child("users").child(id).observeSingleEvent(of: .value, with: { (snapshot) in
                 if let dictionary = snapshot.value as? [String: AnyObject] {
@@ -58,7 +50,6 @@ class UserCell: UITableViewCell {
                     }
                     
                 }
-                //print(snapshot.value!)
             })
         }
     }
@@ -71,7 +62,6 @@ class UserCell: UITableViewCell {
     
     let profileImageView: CustomImageView = {
         let iv = CustomImageView()
-        //iv.image = UIImage(named: "Bill-Gates")
         iv.layer.cornerRadius = 25
         iv.layer.masksToBounds = true
         iv.contentMode = .scaleAspectFill
@@ -87,11 +77,8 @@ class UserCell: UITableViewCell {
         return label
     }()
     
-    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: .subtitle, reuseIdentifier: reuseIdentifier)
-        
-        //detailTextLabel?.textColor = .red
-        // backgroundColor = .yellow
         
         addSubview(profileImageView)
         addSubview(timeLabel)
@@ -105,7 +92,6 @@ class UserCell: UITableViewCell {
         // needs x, y, width, and height constraint anchors
         timeLabel.rightAnchor.constraint(equalTo: self.rightAnchor).isActive = true
         timeLabel.topAnchor.constraint(equalTo: self.topAnchor,constant: 18).isActive = true
-        //        addConstraint(NSLayoutConstraint(item: timeLabel, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1, constant: 20))
         timeLabel.widthAnchor.constraint(equalToConstant: 70).isActive = true
         timeLabel.heightAnchor.constraint(equalTo: textLabel!.heightAnchor).isActive = true
     }

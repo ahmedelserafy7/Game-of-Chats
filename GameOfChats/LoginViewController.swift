@@ -17,20 +17,20 @@ class LoginViewController: UIViewController {
     let inputsContainerView: UIView = {
         let view  = UIView()
         view.backgroundColor = .white
-        view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerRadius = 5
+        view.layer.masksToBounds = true
+        view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
     let nameTextField: UITextField = {
         let tf = UITextField()
         tf.placeholder = "Name"
-        // to remove placeHolder "name"
-        tf.layer.masksToBounds = true
+        tf.textContentType = UITextContentType.oneTimeCode
         tf.translatesAutoresizingMaskIntoConstraints = false
         return tf
     }()
-    
+   
     let nameSeperatorView: UIView = {
         let seperatorView = UIView()
         seperatorView.backgroundColor = UIColor(r: 220, g: 220, b: 220)
@@ -38,20 +38,38 @@ class LoginViewController: UIViewController {
         return seperatorView
     }()
     
-    let emailTextField: UITextField = {
+    lazy var emailTextField: UITextField = {
         let tf = UITextField()
         tf.placeholder = "Email"
-        tf.translatesAutoresizingMaskIntoConstraints = false
         tf.autocapitalizationType = .none
+        tf.textContentType = UITextContentType.oneTimeCode
+        tf.addTarget(self, action: #selector(handleTextInputChange), for: .editingChanged)
+        tf.translatesAutoresizingMaskIntoConstraints = false
         return tf
     }()
-    let passwordTextField: UITextField = {
+    
+    lazy var passwordTextField: UITextField = {
         let tf = UITextField()
         tf.placeholder = "Password"
         tf.isSecureTextEntry = true
+        tf.addTarget(self, action: #selector(handleTextInputChange), for: .editingChanged)
+        tf.textContentType = UITextContentType.oneTimeCode
         tf.translatesAutoresizingMaskIntoConstraints = false
         return tf
     }()
+    
+    @objc func handleTextInputChange() {
+       
+        let isFormValid = emailTextField.text?.count ?? 0 > 0 && passwordTextField.text?.count ?? 0 > 0 
+        if isFormValid {
+            loginRegisterButton.isEnabled = true
+            loginRegisterButton.backgroundColor = UIColor(r: 80, g: 101, b: 161)
+        } else {
+            loginRegisterButton.isEnabled = false
+            loginRegisterButton.backgroundColor = UIColor(white: 1, alpha: 0.3)
+        }
+        
+    }
     
     let emailSeperatorView: UIView = {
         let seperatorView = UIView()
@@ -59,19 +77,58 @@ class LoginViewController: UIViewController {
         seperatorView.translatesAutoresizingMaskIntoConstraints = false
         return seperatorView
     }()
-    let loginRegisterButton: UIButton = {
+    
+    let blackView: UIView = {
+        let bv = UIView()
+        bv.backgroundColor = .black
+        bv.layer.cornerRadius = 16
+        bv.layer.masksToBounds = true
+        bv.translatesAutoresizingMaskIntoConstraints = false
+        return bv
+    }()
+    
+    let activityIndicator: UIActivityIndicatorView = {
+        let aI = UIActivityIndicatorView(style: .white)
+        aI.hidesWhenStopped = true
+        aI.translatesAutoresizingMaskIntoConstraints = false
+        return aI
+    }()
+    
+    func setupAuthorizing() {
+        
+        view.addSubview(blackView)
+        blackView.addSubview(activityIndicator)
+        
+        blackView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        blackView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
+        blackView.heightAnchor.constraint(equalToConstant: 120).isActive = true
+        blackView.widthAnchor.constraint(equalToConstant: 120).isActive = true
+        
+        activityIndicator.centerXAnchor.constraint(equalTo: blackView.centerXAnchor).isActive = true
+        activityIndicator.centerYAnchor.constraint(equalTo: blackView.centerYAnchor).isActive = true
+        activityIndicator.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        activityIndicator.widthAnchor.constraint(equalToConstant: 20).isActive = true
+    }
+    
+    lazy var loginRegisterButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Register", for: .normal)
-        button.backgroundColor = UIColor(r: 80, g: 101, b: 161)
+        button.backgroundColor = UIColor(white: 1, alpha: 0.3)
         button.setTitleColor(.white, for: .normal)
         button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
         button.layer.cornerRadius = 4
         button.addTarget(self, action: #selector(handleLoginRegisterButton), for: .touchUpInside)
+        button.isEnabled = false
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
-    func handleLoginRegisterButton() {
+    @objc func handleLoginRegisterButton() {
+        
+        setupAuthorizing()
+        self.blackView.alpha = 1
+        self.activityIndicator.startAnimating()
+        
         if loginRegisterSegmentedControl.selectedSegmentIndex == 0 {
             handleLoginButton()
         } else {
@@ -79,21 +136,47 @@ class LoginViewController: UIViewController {
         }
     }
     
+    func displayAlert(_ message: String) {
+        let alertController = UIAlertController(title: "Alert", message: message, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+            
+        }))
+        self.present(alertController, animated: true, completion: nil)
+    }
+    
     func handleLoginButton() {
         guard let email = emailTextField.text, let password = passwordTextField.text else {
             return
         }
         
+        if email.isEmpty || password.isEmpty {
+            
+            self.emailTextField.text = nil
+            self.passwordTextField.text = nil
+            
+            blackView.alpha = 0
+            activityIndicator.stopAnimating()
+            
+            self.displayAlert("One of the required fields is missing")
+            return
+        }
+        
         Auth.auth().signIn(withEmail: email, password: password) { (user, error) in
+            
+            self.blackView.alpha = 0
+            self.activityIndicator.stopAnimating()
+            
             if error != nil {
                 print(error!)
+                
+                self.emailTextField.text = nil
+                self.passwordTextField.text = nil
+                
+                self.displayAlert("Couldn't successfully perform this request, please try again..")
                 return
             }
+            
             self.myMessagesController?.fetchUserWithNavbarTitle()
-            /*let user = User()
-             let values = ["name": user.name, "email": user.email, "profileImageUrl": user.profileImageUrl]
-             user.setValuesForKeys(values)
-             self.myOwnMessages?.setupNavBarTitleWithProfileImageView(user: user)*/
             self.dismiss(animated: true, completion: nil)
         }
         
@@ -112,7 +195,7 @@ class LoginViewController: UIViewController {
         return iv
     }()
     
-    let loginRegisterSegmentedControl: UISegmentedControl = {
+    lazy var loginRegisterSegmentedControl: UISegmentedControl = {
         let sc = UISegmentedControl(items: ["Login", "Register"])
         sc.tintColor = .white
         sc.selectedSegmentIndex = 1
@@ -121,15 +204,12 @@ class LoginViewController: UIViewController {
         return sc
     }()
     
-    func handleLoginRegisterSegmentedControl() {
-        
-        //        print(loginRegisterSegmentedControl.selectedSegmentIndex)
+    @objc func handleLoginRegisterSegmentedControl() {
         
         // titleForSegment: return the title of selected segment, title based on SegmentedControlTitle that you pressed on it
         let title = loginRegisterSegmentedControl.titleForSegment(at: loginRegisterSegmentedControl.selectedSegmentIndex)
         loginRegisterButton.setTitle(title, for: .normal)
         
-        //        inputsContainerViewHeightAnchor?.constant = 100
         inputsContainerViewHeightAnchor?.constant = loginRegisterSegmentedControl.selectedSegmentIndex == 0 ? 100 : 150
         
         // height of nameTextField
@@ -142,6 +222,8 @@ class LoginViewController: UIViewController {
         // nameTextField.isHidden = loginRegisterSegmentedControl.selectedSegmentIndex == 0
         nameTextFieldHeightAnchor?.isActive = true
         
+        nameTextField.isHidden = loginRegisterSegmentedControl.selectedSegmentIndex == 0  ? true : false
+        
         // the height of emailTextField
         // to setup constraint from the beginning
         emailTextFieldHeightAnchor?.isActive = false
@@ -151,7 +233,7 @@ class LoginViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        //        view.backgroundColor = UIColor(red: 61/255, green: 91/255, blue: 151/255, alpha: 1)
+        
         view.backgroundColor = UIColor(r: 61, g: 91, b: 151)
         
         view.addSubview(inputsContainerView)
@@ -166,6 +248,13 @@ class LoginViewController: UIViewController {
         
         // must add profileImageView to view at viewDidLoad, to conform to IBAction
         view.addSubview(profileImageView)
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        view.addGestureRecognizer(tap)
+    }
+    
+   @objc func dismissKeyboard() {
+        view.endEditing(true)
     }
     
     
@@ -247,13 +336,9 @@ class LoginViewController: UIViewController {
         profileImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
         
     }
+    
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
 }
 
-extension UIColor {
-    convenience init(r: CGFloat, g: CGFloat, b: CGFloat) {
-        self.init(red: r/255, green: g/255, blue: b/255, alpha: 1)
-    }
-}

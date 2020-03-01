@@ -24,7 +24,7 @@ class Message: NSObject {
     var videoUrl: String?
     
     // to solve thew problem that you should add new property, after add new child node
-    init(dictionary: [String: Any]) {
+  /*  init(dictionary: [String: Any]) {
         fromId = dictionary["fromId"] as? String
         toId = dictionary["toId"] as? String
         textMessage = dictionary["textMessage"] as? String
@@ -35,17 +35,9 @@ class Message: NSObject {
         imageWidth = dictionary["imageWidth"] as? NSNumber
         
         videoUrl = dictionary["videoUrl"] as? String
-    }
+    }*/
     
     func chatPartnerId() -> String? {
         return fromId == Auth.auth().currentUser?.uid ? toId : fromId
-        
-        /*
-         if fromId == Auth.auth().currentUser?.uid {
-         return toId
-         }
-         else {
-         return fromId
-         }*/
     }
 }

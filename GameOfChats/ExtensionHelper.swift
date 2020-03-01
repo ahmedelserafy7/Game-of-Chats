@@ -8,6 +8,12 @@
 
 import UIKit
 
+extension UIColor {
+    convenience init(r: CGFloat, g: CGFloat, b: CGFloat) {
+        self.init(red: r/255, green: g/255, blue: b/255, alpha: 1)
+    }
+}
+
 let imageCache = NSCache<NSString, UIImage>()
 
 class CustomImageView: UIImageView {
@@ -32,10 +38,10 @@ class CustomImageView: UIImageView {
                 // to return out of downloading image (not to complete), if it gets error
                 return
             }
+            
+            guard let data = data else { return }
             DispatchQueue.main.async(execute: {
-                // cell.imageView?.image = UIImage(data: data!)
-                
-                let imageToCache = UIImage(data: data!)
+                let imageToCache = UIImage(data: data)
                 
                 if self.imageUrlString == urlString {
                     self.image = imageToCache
